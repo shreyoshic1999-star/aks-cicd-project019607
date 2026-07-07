@@ -5,6 +5,13 @@ on:
     branches:
       - main
 
+env:
+  ACR_NAME: ${{ vars.ACR_NAME }}
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+  AKS_RESOURCE_GROUP: ${{ vars.AKS_RESOURCE_GROUP }}
+  AKS_CLUSTER_NAME: ${{ vars.AKS_CLUSTER_NAME }}
+  APP_NAME: ${{ vars.APP_NAME }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -20,42 +27,44 @@ jobs:
           TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         run: |
-          az login --service-principal \
-            -u "$CLIENT_ID" \
-            -p "$CLIENT_SECRET" \
+          az login \
+            --service-principal \
+            --username "$CLIENT_ID" \
+            --password "$CLIENT_SECRET" \
             --tenant "$TENANT_ID"
 
           az account set \
             --subscription "$SUBSCRIPTION_ID"
 
       - name: Verify Azure Login
-        run: |
-          az account show
+        run: az account show
 
       - name: Login to ACR
         run: |
-          az acr login --name shreyoshiazurecicd
+          az acr login --name $ACR_NAME
 
       - name: Build Docker Image
         run: |
-          docker build -t shreyoshiazurecicd.azurecr.io/flask-app:${{ github.sha }} .
+          docker build \
+            -t $ACR_LOGIN_SERVER/$APP_NAME:${{ github.sha }} .
 
       - name: Push Docker Image
         run: |
-          docker push shreyoshiazurecicd.azurecr.io/flask-app:${{ github.sha }}
+          docker push \
+            $ACR_LOGIN_SERVER/$APP_NAME:${{ github.sha }}
 
       - name: Get AKS Credentials
         run: |
           az aks get-credentials \
-            --resource-group azurecicd \
-            --name aks-cluster \
+            --resource-group $AKS_RESOURCE_GROUP \
+            --name $AKS_CLUSTER_NAME \
             --overwrite-existing
 
-      - name: Update Deployment
+      - name: Update Deployment Image
         run: |
-          kubectl set image deployment/flask-app \
-            flask-app=shreyoshiazurecicd.azurecr.io/flask-app:${{ github.sha }}
+          kubectl set image deployment/$APP_NAME \
+          $APP_NAME=$ACR_LOGIN_SERVER/$APP_NAME:${{ github.sha }}
 
       - name: Verify Rollout
         run: |
-          kubectl rollout status deployment/flask-app
+          kubectl rollout status deployment/$APP_NAME
