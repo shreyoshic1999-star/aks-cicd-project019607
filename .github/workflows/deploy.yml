@@ -13,27 +13,36 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Verify Secret Lengths
+      - name: Verify Secret Values
         env:
           CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
         run: |
-          echo "CLIENT_ID Length: ${#CLIENT_ID}"
-          echo "TENANT_ID Length: ${#TENANT_ID}"
-          echo "SUBSCRIPTION_ID Length: ${#SUBSCRIPTION_ID}"
-          echo "CLIENT_SECRET Length: ${#CLIENT_SECRET}"
+          echo "CLIENT_ID Length=${#CLIENT_ID}"
+          echo "CLIENT_SECRET Length=${#CLIENT_SECRET}"
+          echo "TENANT_ID Length=${#TENANT_ID}"
+          echo "SUBSCRIPTION_ID Length=${#SUBSCRIPTION_ID}"
+
+          echo "CLIENT_ID Prefix=${CLIENT_ID:0:5}"
+          echo "CLIENT_SECRET Prefix=${CLIENT_SECRET:0:5}"
+          echo "TENANT_ID Prefix=${TENANT_ID:0:5}"
 
       - name: Azure Login
+        env:
+          CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         run: |
           az login --service-principal \
-            --username "${{ secrets.AZURE_CLIENT_ID }}" \
-            --password "${{ secrets.AZURE_CLIENT_SECRET }}" \
-            --tenant "${{ secrets.AZURE_TENANT_ID }}"
+            --username "$CLIENT_ID" \
+            --password "$CLIENT_SECRET" \
+            --tenant "$TENANT_ID"
 
           az account set \
-            --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+            --subscription "$SUBSCRIPTION_ID"
 
       - name: Verify Azure Login
         run: |
