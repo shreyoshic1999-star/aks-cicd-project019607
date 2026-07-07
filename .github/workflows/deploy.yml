@@ -13,28 +13,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Verify Secret Length
+      - name: Verify Secret Lengths
         env:
           CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
           TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         run: |
-          python3 -c "
-import os
-print('CLIENT_ID Length =', len(os.environ['CLIENT_ID']))
-print('CLIENT_SECRET Length =', len(os.environ['CLIENT_SECRET']))
-print('TENANT_ID Length =', len(os.environ['TENANT_ID']))
-print('SUBSCRIPTION_ID Length =', len(os.environ['SUBSCRIPTION_ID']))
-"
-
-      - name: Write Secret To File
-        env:
-          CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-        run: |
-          printf "%s" "$CLIENT_SECRET" > secret.txt
-          echo "Secret file size:"
-          wc -c secret.txt
+          echo "CLIENT_ID Length=${#CLIENT_ID}"
+          echo "CLIENT_SECRET Length=${#CLIENT_SECRET}"
+          echo "TENANT_ID Length=${#TENANT_ID}"
+          echo "SUBSCRIPTION_ID Length=${#SUBSCRIPTION_ID}"
 
       - name: Azure Login
         env:
