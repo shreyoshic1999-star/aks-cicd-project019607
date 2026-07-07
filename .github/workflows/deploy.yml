@@ -13,6 +13,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Debug Secrets
+        run: |
+          echo "CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}"
+          echo "TENANT_ID=${{ secrets.AZURE_TENANT_ID }}"
+          echo "SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
       - name: Azure Login
         run: |
           az login --service-principal \
@@ -45,7 +51,7 @@ jobs:
       - name: Update Deployment
         run: |
           kubectl set image deployment/flask-app \
-          flask-app=shreyoshiazurecicd.azurecr.io/flask-app:${{ github.sha }}
+            flask-app=shreyoshiazurecicd.azurecr.io/flask-app:${{ github.sha }}
 
       - name: Verify Rollout
         run: |
