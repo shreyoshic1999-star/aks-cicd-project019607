@@ -1,45 +1,53 @@
-name: Build and Deploy to AKS
+name: AKS CI/CD Pipeline
 
 on:
-  push:
-    branches:
-      - main
+push:
+branches:
+- main
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
+deploy:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+env:
+CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+RESOURCE_GROUP: ${{ secrets.RESOURCE_GROUP }}
+AKS_NAME: ${{ secrets.AKS_NAME }}
+ACR_NAME: ${{ secrets.ACR_NAME }}
 
-      - name: Verify Secret Lengths
-        env:
-          CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        run: |
-          echo "CLIENT_ID Length=${#CLIENT_ID}"
-          echo "CLIENT_SECRET Length=${#CLIENT_SECRET}"
-          echo "TENANT_ID Length=${#TENANT_ID}"
-          echo "SUBSCRIPTION_ID Length=${#SUBSCRIPTION_ID}"
+steps:
+- name: Checkout code
+uses: actions/checkout@v4
 
-      - name: Azure Login
-        env:
-          CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        run: |
-          az login --service-principal \
-            --username "$CLIENT_ID" \
-            --password "$CLIENT_SECRET" \
-            --tenant "$TENANT_ID"
+- name: Verify Secret Lengths
+run: |
+echo "CLIENT_ID Length=${#CLIENT_ID}"
+echo "CLIENT_SECRET Length=${#CLIENT_SECRET}"
+echo "TENANT_ID Length=${#TENANT_ID}"
+echo "SUBSCRIPTION_ID Length=${#SUBSCRIPTION_ID}"
 
-          az account set \
-            --subscription "$SUBSCRIPTION_ID"
+- name: Azure Login
+run: |
+az login \
+--service-principal \
+--username "$CLIENT_ID" \
+--password "$CLIENT_SECRET" \
+--tenant "$TENANT_ID"
 
-      - name: Verify Azure Login
-        run: |
-          az account show
+- name: Set Subscription
+run: |
+az account set --subscription "$SUBSCRIPTION_ID"
+
+- name: Get AKS Credentials
+run: |
+az aks get-credentials \
+--resource-group "$RESOURCE_GROUP" \
+--name "$AKS_NAME" \
+--overwrite-existing
+
+- name: Verify Cluster
+run: |
+kubectl get nodes
